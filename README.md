@@ -240,7 +240,44 @@ Después de un acierto o un fallo, `Esperar_Liberacion_K1` **espera a que el usu
 | `Leer_K1_Debounced` devolvía un valor incorrecto | El `POP {R0, ...}` restauraba el R0 viejo encima del resultado | El valor de retorno se carga en R0 **después** del `POP` |
 | La misma pulsación disparaba dos partidas | El botón seguía presionado al reiniciar | Rutina `Esperar_Liberacion_K1` |
 
-### 5.9 Evidencias
+### 5.9 Resultado de las pruebas en hardware
+
+> ⚠️ **El sistema no funcionó completamente.**
+
+| Función | Resultado |
+|---|---|
+| Inicialización (LEDs apagados, encendido de las 8 columnas 1 s) | ✔ Funciona |
+| Barrido de los 8 LEDs con SysTick (500 ms por LED) | ✔ Funciona |
+| Detección del pulsador K1 | ✘ **No funciona**: al presionar K1 la ruleta sigue girando como si no se hubiera presionado |
+| Acierto (parpadeo ×3) y fallo (congelamiento 2 s) | ✘ No se pudieron probar, porque dependen de la detección de K1 |
+| Botón RST de la placa | ✔ Reinicia el microcontrolador y el programa arranca de nuevo |
+
+**Causa probable.** El programa supone que K1 es **activo en alto**: configura PE3 con pull-down y espera leer `1` al presionar. En la tarjeta STM32F407VET6 Black, los pulsadores K0 (PE4) y K1 (PE3) suelen estar conectados **entre el pin y GND**, es decir, son **activos en bajo**. Si es así:
+
+- Al presionar K1, el pin se conecta a GND y lee `0`.
+- Con el botón suelto, la pull-down también deja el pin en `0`.
+- El pin **siempre lee `0`**, la condición `PE3 = 1` nunca se cumple y el barrido nunca se detiene.
+
+Esto coincide con lo observado: el barrido funciona normal y solo el botón RST, que actúa directamente sobre el pin NRST del microcontrolador, tiene efecto.
+
+**Cómo verificarlo:**
+1. En el depurador de SES, pausar el programa y observar el bit 3 de `GPIOE_IDR` (`0x4002 1010`) con K1 suelto y luego presionado.
+2. O medir con el multímetro el voltaje de PE3 respecto a GND en ambos estados.
+
+Si el bit no cambia nunca de `0`, se confirma que el botón es activo en bajo.
+
+**Corrección propuesta** (sin cambiar la lógica del juego):
+
+| Cambio | Antes | Después |
+|---|---|---|
+| `K1_PUPDR_DOWN` → pull-up en PE3 | `0x00000080` (`10` = pull-down) | `0x00000040` (`01` = pull-up) |
+| `Delay_ms_Poll_K1`: condición de pulsación | `CMP R3, #1` / `BNE poll_no_press` | `CMP R3, #0` / `BNE poll_no_press` |
+| `Leer_K1_Debounced`: confirmación | `CMP R1, #1` / `BEQ debounce_confirmado` | `CMP R1, #0` / `BEQ debounce_confirmado` |
+| `Esperar_Liberacion_K1`: botón suelto | `CMP R0, #0` (espera mientras sea `1`) | `CMP R0, #1` (espera mientras sea `0`) |
+
+Otra opción es usar un **pulsador externo N.O.** (como pide el enunciado) conectado entre PE3 y 3.3 V. En ese caso el código actual, con pull-down y activo en alto, sí es correcto tal como está.
+
+### 5.10 Evidencias
 En `docs/` se incluyen fotos del montaje, capturas del depurador de SES con los registros de GPIOE y SysTick, y el video del funcionamiento.
 
 ---
