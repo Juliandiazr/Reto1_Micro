@@ -14,8 +14,8 @@ El sistema es un probador de reflejos: un único LED recorre un arreglo de 8 LED
 ```
 ├── src/
 │   └── matrix_row5_scan.s   → programa en ensamblador, comentado
-├── docs/                    → fotos del montaje, capturas del depurador, bocetos
-├── img/                     → imágenes usadas en este README
+├── docs/
+│   └── diagramas.md         → diagrama de bloques y diagrama de flujo
 └── README.md                → documentación técnica
 ```
 
@@ -278,7 +278,7 @@ Si el bit no cambia nunca de `0`, se confirma que el botón es activo en bajo.
 Otra opción es usar un **pulsador externo N.O.** (como pide el enunciado) conectado entre PE3 y 3.3 V. En ese caso el código actual, con pull-down y activo en alto, sí es correcto tal como está.
 
 ### 5.10 Evidencias
-En `docs/` se incluyen fotos del montaje, capturas del depurador de SES con los registros de GPIOE y SysTick, y el video del funcionamiento.
+La evidencia del desarrollo es el propio código comentado en `src/`, la tabla de problemas y soluciones (§5.8), el registro de pruebas en hardware (§5.9) y los diagramas en [`docs/diagramas.md`](docs/diagramas.md). No se registraron fotos ni video del montaje.
 
 ---
 
