@@ -1,0 +1,9 @@
+# Segger Embedded Studio
+Output/
+*.emSession
+*.jlink
+*.o
+*.elf
+*.hex
+*.map
+.DS_Store
